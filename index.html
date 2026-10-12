@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Sự kiện Câu lạc bộ</title>
+    <meta name="description" content="Hệ thống quản lý sự kiện, đăng ký và check-in của Câu lạc bộ Ruby">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS Modules -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/responsive.css">
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- SheetJS (Xuất Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="app">
+
+        <!-- Toast Notification -->
+        <div id="toast-container"></div>
+
+        <!-- Top Navigation -->
+        <header id="topbar" class="hidden">
+            <div class="topbar-logo">
+                <span class="logo-icon">🐝</span>
+                <h2>BEECLUB</h2>
+            </div>
+            <nav id="nav-menu">
+                <!-- Được render động bởi js/sidebar.js (đóng vai trò navbar) -->
+            </nav>
+            <div class="topbar-actions">
+                <div class="user-info">
+                    <div class="avatar" id="user-avatar">?</div>
+                    <div class="details">
+                        <span id="user-name-display">Guest</span>
+                        <span id="user-role-display">Khách</span>
+                    </div>
+                </div>
+                <!-- Bell icon and Settings could go here as per image, mockup for now -->
+                <button id="btn-logout" class="btn btn-outline btn-sm">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content">
+
+            <!-- ── View: Auth (Login / Register) ── -->
+            <section id="view-auth" class="view active glass-panel">
+                <div class="auth-container">
+                    <h1 class="auth-title">Chào mừng trở lại</h1>
+                    <p class="auth-subtitle">Đăng nhập để quản lý sự kiện của bạn</p>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" data-target="form-login">Đăng nhập</button>
+                        <button class="tab-btn" data-target="form-register">Đăng ký</button>
+                    </div>
+
+                    <!-- Form Đăng nhập -->
+                    <form id="form-login" class="auth-form active">
+                        <div class="form-group">
+                            <label>Email hoặc Mã số sinh viên (MSSV)</label>
+                            <input type="text" id="login-username" required placeholder="email@example.com hoặc MSSV">
+                        </div>
+                        <div class="form-group">
+                            <label>Mật khẩu</label>
+                            <input type="password" id="login-password" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+                        <div class="auth-divider"><span>Hoặc</span></div>
+                        <button type="button" class="btn btn-google btn-block">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google"> Đăng nhập bằng Google
+                        </button>
+                    </form>
+
+                    <!-- Form Đăng ký -->
+                    <form id="form-register" class="auth-form hidden">
+                        <div class="form-group">
+                            <label>Họ và Tên</label>
+                            <input type="text" id="reg-name" required placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="form-group">
+                            <label>Mã số sinh viên (MSSV)</label>
+                            <input type="text" id="reg-studentid" required placeholder="Ví dụ: 2026xxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="reg-email" required placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Mật khẩu <small style="color:var(--text-muted)">(tối thiểu 6 ký tự)</small></label>
+                            <input type="password" id="reg-password" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Đăng ký</button>
+                        <div class="auth-divider"><span>Hoặc</span></div>
+                        <button type="button" class="btn btn-google btn-block">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google"> Đăng ký qua Google
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ── View: Dashboard (Admin/Manager) ── -->
+            <section id="view-dashboard" class="view hidden">
+                <div class="dashboard-shell">
+                    <h2>Tổng quan Sự kiện</h2>
+                    <div>
+                        <button class="btn btn-outline" id="btn-export-excel" style="margin-right:10px">📥 Xuất Dữ Liệu SV</button>
+                        <button class="btn btn-primary" id="btn-create-event">+ Tạo Sự kiện Mới</button>
+                    </div>
+                </div>
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <h3>Tổng Sự Kiện</h3>
+                        <div class="value" id="stat-total-events">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Người Đăng Ký</h3>
+                        <div class="value" id="stat-total-regs">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Đã Check-in</h3>
+                        <div class="value" id="stat-total-checkins">0</div>
+                    </div>
+                </div>
+                <div class="event-list-container">
+                    <h3>Danh sách Sự kiện</h3>
+                    <div class="search-bar">
+                        <input type="text" id="dashboard-search" placeholder="Tìm kiếm sự kiện...">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tên Sự Kiện</th>
+                                    <th>Ngày Diễn Ra</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Địa Điểm</th>
+                                    <th>Đã Đăng Ký</th>
+                                    <th>Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-events-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── View: User Management (Super Admin) hay "Member Hub" ── -->
+            <section id="view-users" class="view hidden">
+                <header class="view-header" style="margin-bottom: 20px;">
+                    <div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 5px;">WIBI7903</p>
+                        <h2 style="font-size: 2.2rem; font-weight: 700; color: #FFF; margin:0;">Member Hub</h2>
+                    </div>
+                    <div class="filters-toggle">
+                        <button class="filter-tab active">All</button>
+                        <button class="filter-tab">VIP</button>
+                        <button class="filter-tab">Staff</button>
+                    </div>
+                </header>
+                
+                <!-- Thay vì stats tĩnh, tạo mock stats cho User Management theo style đen vàng -->
+                <div class="dashboard-stats" style="margin-bottom: 40px;">
+                    <div class="stat-card">
+                        <h3>TOTAL HIVE MEMBERS</h3>
+                        <div class="value" id="hub-total-members">1,000</div>
+                        <div class="stat-meta success">↗ 12% INCREASE THIS MONTH</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>ACTIVE STAFF</h3>
+                        <div class="value" id="hub-active-staff">42</div>
+                        <div class="stat-meta success">⚡ 98% ONLINE NOW</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>VIP RESERVATIONS</h3>
+                        <div class="value" id="hub-vip">128</div>
+                        <div class="stat-meta">☆ FULLY BOOKED TONIGHT</div>
+                    </div>
+                </div>
+
+                <div class="user-list-container" style="background: transparent; box-shadow: none;">
+                    <div class="search-bar" style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <input type="text" id="user-search" placeholder="🔍 Search by name, email or hive ID..." style="flex:1;">
+                        <button class="btn btn-outline" style="color: var(--text-muted); border-color: var(--border);">
+                            <span style="margin-right: 5px;">⚙</span> Filters
+                        </button>
+                        <button class="btn btn-primary" id="btn-add-user-modal">
+                            <span style="font-size: 1.2rem; margin-right:5px;">+</span> ADD MEMBER
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table member-table">
+                            <thead>
+                                <tr>
+                                    <th>MEMBER</th>
+                                    <th>STATUS</th>
+                                    <th>CATEGORY</th>
+                                    <th>JOINED</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-tbody"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination-footer">
+                        <span>Showing 1-4 of 1,000 records</span>
+                        <div class="pagination-controls">
+                            <button>&lt;</button>
+                            <button class="active">1</button>
+                            <button>2</button>
+                            <button>3</button>
+                            <span>...</span>
+                            <button>250</button>
+                            <button>&gt;</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── View: Explore Events (User) ── -->
+            <section id="view-explore" class="view hidden">
+                <header class="view-header">
+                    <h2>Khám phá Sự kiện</h2>
+                    <p>Đăng ký các sự kiện nổi bật của CLB</p>
+                </header>
+                <div class="search-bar">
+                    <input type="text" id="explore-search" placeholder="Tìm kiếm sự kiện bạn quan tâm...">
+                </div>
+                <div class="event-grid" id="explore-events-grid"></div>
+            </section>
+
+            <!-- ── View: My Tickets (User) ── -->
+            <section id="view-tickets" class="view hidden">
+                <header class="view-header">
+                    <h2>Vé của Tôi</h2>
+                    <p>Sử dụng mã vé để check-in tại sự kiện</p>
+                </header>
+                <div class="tickets-list" id="my-tickets-list"></div>
+            </section>
+
+            <!-- ── View: Check-in System (Admin/Manager) ── -->
+            <section id="view-checkin" class="view hidden">
+                <header class="view-header">
+                    <h2>Hệ thống Check-in</h2>
+                    <select id="checkin-event-select" class="form-select">
+                        <option value="">-- Chọn sự kiện để check-in --</option>
+                    </select>
+                </header>
+
+                <div class="checkin-container glass-panel">
+                    <div class="scanner-mock">
+                        <div class="scanner-animation"></div>
+                        <p>Sẵn sàng quét mã QR/Barcode</p>
+                    </div>
+                    <div class="manual-checkin">
+                        <h3>Hoặc nhập mã vé thủ công</h3>
+                        <div class="input-group">
+                            <input type="text" id="checkin-ticket-code" placeholder="Nhập mã vé hoặc MSSV (Vd: EVT-001)">
+                            <button id="btn-do-checkin" class="btn btn-primary">Xác nhận</button>
+                        </div>
+                    </div>
+                    <div id="checkin-result" class="checkin-result hidden"></div>
+                </div>
+
+                <div class="recent-checkins">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+                        <h3 style="margin:0">Check-in Gần Đây</h3>
+                        <button id="btn-clear-checkin-logs" class="btn btn-sm btn-outline" style="border-color:var(--error);color:var(--error)">🧹 Dọn dẹp</button>
+                    </div>
+                    <ul class="checkin-log" id="checkin-log-list"></ul>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ── Modal: Tạo / Sửa Sự kiện ── -->
+    <div id="modal-event" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-event-title">Tạo Sự kiện Mới</h3>
+                <button class="close-btn" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-event">
+                    <input type="hidden" id="event-id">
+                    <div class="form-group">
+                        <label>Tên Sự Kiện</label>
+                        <input type="text" id="event-name" required placeholder="Tiệc trăng rằm, Kỷ niệm...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Bắt đầu (Dự kiến)</label>
+                            <input type="datetime-local" id="event-date" required>
+                        </div>
+                        <div class="form-group half">
+                            <label>Kết thúc (Dự kiến)</label>
+                            <input type="datetime-local" id="event-end-date" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Số lượng vé tối đa</label>
+                            <input type="number" id="event-capacity" required value="1000" min="1">
+                        </div>
+                        <div class="form-group half">
+                            <label>Địa điểm</label>
+                            <input type="text" id="event-location" required placeholder="Hội trường A">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mô tả chi tiết</label>
+                        <textarea id="event-desc" rows="4" placeholder="Nội dung sự kiện..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Quyền lợi tham gia</label>
+                        <input type="text" id="event-benefits" placeholder="Ví dụ: Giấy chứng nhận, Quà lưu niệm...">
+                    </div>
+                    <div class="form-group">
+                        <label>Nhà tài trợ</label>
+                        <input type="text" id="event-sponsors" placeholder="Ví dụ: Google, Microsoft...">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="btn-cancel-modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu Sự Kiện</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Đăng ký Sự kiện ── -->
+    <div id="modal-register" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width:450px">
+            <div class="modal-header">
+                <h3 style="font-size:1.1rem">Tham gia: <span id="register-event-name" style="color:var(--primary)"></span></h3>
+                <button class="close-btn" id="btn-close-register-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-register-event">
+                    <input type="hidden" id="register-event-id">
+                    <div class="form-group">
+                        <label>Họ và Tên</label>
+                        <input type="text" id="reg-form-name" required placeholder="Nguyễn Văn A">
+                    </div>
+                    <div class="form-group">
+                        <label>Mã số sinh viên (MSSV)</label>
+                        <input type="text" id="reg-form-mssv" required placeholder="Chỉ điền số">
+                    </div>
+                    <div class="form-group">
+                        <label>Email liên hệ</label>
+                        <input type="email" id="reg-form-email" required placeholder="example@gmail.com">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="btn-cancel-register-modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Xác nhận Đăng ký</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Danh sách đăng ký Sự kiện ── -->
+    <div id="modal-event-users" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width:800px;width:90%">
+            <div class="modal-header">
+                <h3>Danh sách Đăng ký: <span id="view-users-event-name" style="color:var(--primary)"></span></h3>
+                <button class="close-btn" id="btn-close-event-users-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã Vé</th>
+                                <th>MSSV</th>
+                                <th>Họ và Tên</th>
+                                <th>Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="event-users-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div style="padding:15px 25px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+                <button type="button" class="btn btn-outline" id="btn-close-event-users-bottom">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Modal: Thêm Tài khoản Thành viên ── -->
+    <div id="modal-add-user" class="modal hidden">
+        <div class="modal-content glass-panel" style="max-width:450px">
+            <div class="modal-header">
+                <h3>Thêm Thành viên</h3>
+                <button class="close-btn" id="btn-close-user-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="form-add-user">
+                    <div class="form-group">
+                        <label>Họ và Tên</label>
+                        <input type="text" id="add-user-name" required placeholder="Tên thành viên">
+                    </div>
+                    <div class="form-group">
+                        <label>MSSV / ID</label>
+                        <input type="text" id="add-user-id" required placeholder="ID tự chọn hoặc MSSV">
+                    </div>
+                    <div class="form-group">
+                        <label>Chức vụ (Role)</label>
+                        <select id="add-user-role" class="form-select" style="width:100%;margin-top:5px;padding:10px;border-radius:8px">
+                            <option value="user">Thành viên (Khách)</option>
+                            <option value="manager">Ban Tổ Chức (Manager)</option>
+                            <option value="admin">Quản trị viên (Admin)</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="btn-cancel-user-modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Thêm Thành Viên</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── JavaScript Modules (đúng thứ tự phụ thuộc) ── -->
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/admin/dashboard.js"></script>
+    <script src="js/admin/users.js"></script>
+    <script src="js/admin/export.js"></script>
+    <script src="js/user/explore.js"></script>
+    <script src="js/user/tickets.js"></script>
+    <script src="js/checkin/checkin.js"></script>
+
+</body>
+</html>

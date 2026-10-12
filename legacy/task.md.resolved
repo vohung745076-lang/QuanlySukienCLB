@@ -1,0 +1,26 @@
+# Task List: Hệ thống Web Quản lý Sự kiện CLB
+
+- [x] 1. Khởi tạo dự án & Cấu hình cơ sở
+  - [x] 1.1 Khởi tạo dự án bằng Vanilla JS/HTML/CSS (Môi trường thuần, phản hồi cực nhanh).
+  - [x] 1.2 Thiết lập cấu trúc hệ thống mô phỏng localStorage. 
+  - [x] 1.3 Cấu hình hệ thống Design Token cho tông màu: Đỏ Ruby pha hồng.
+- [x] 2. Xây dựng Layout & UI Components
+  - [x] 2.1 Tạo Vanilla CSS framework (Typography Outfit, Glassmorphism).
+  - [x] 2.2 Tạo Sidebar cho việc điều hướng và User header.
+- [x] 3. Module Authentication
+  - [x] 3.1 Trang Login cực mượt với chia Tab bằng Flexbox.
+  - [x] 3.2 Trang Register.
+  - [x] 3.3 Thiết lập cơ chế Auth ngầm (Phân loại tự động Admin vs User).
+- [x] 4. Module Quản lý Sự kiện (Event Management - Admin)
+  - [x] 4.1 Tạo lưới (Grid/Table) hiển thị danh sách dạng Dashboard cho 1000 người thao tác.
+  - [x] 4.2 Modal form tạo sự kiện mới, lưu trực tiếp thông tin.
+  - [x] 4.3 Quản lý các event CRUD hoàn chỉnh.
+- [x] 5. Module Quản lý Vé (Ticket Management - User)
+  - [x] 5.1 Khu vực "Khám phá sự kiện" để người dùng click đăng ký tham dự.
+  - [x] 5.2 Màn hình "Vé của tôi" cho phép xuất vé ảo (Mã Ticket).
+- [x] 6. Module Check-in (Check-in System - Staff/Admin)
+  - [x] 6.1 Giao diện Check-in kèm khu vực input code tốc độ cao (quét barcode/nhập nhanh).
+  - [x] 6.2 Bảng hiển thị thông báo kết quả (Success/Error) + Lịch sử logs realtime.
+- [x] 7. Polish & Kiểm tra độ mượt
+  - [x] 7.1 Giao diện dark form red / glassmorphism đã được apply.
+  - [x] 7.2 Micro-interactions và Toast notification đã được tích hợp đầy đủ.

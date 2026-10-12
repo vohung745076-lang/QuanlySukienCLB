@@ -1,0 +1,77 @@
+/* ============================================================
+   base.css - CSS Variables, Reset, Typography
+   ============================================================ */
+
+:root {
+    --primary: #fde047;
+    --primary-hover: #facc15;
+    --primary-light: rgba(253, 224, 71, 0.14);
+    --secondary: #d4d4d8;
+
+    --dark: #111827;
+    --surface: #27272a;
+    --background: #121212;
+    --card-bg: #1e1e1e;
+
+    --text-main: #ffffff;
+    --text-muted: #a1a1aa;
+    --text-strong: #161616;
+    --text-soft-dark: #52525b;
+    --border: #27272a;
+    --border-light: #e5e7eb;
+
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+
+    --header-height: 80px;
+    --radius: 8px;
+    --radius-lg: 12px;
+
+    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --glass-bg: rgba(30, 30, 30, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.05);
+
+    --font-family: 'Outfit', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background);
+    color: var(--text-main);
+    margin: 0;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+}
+
+h1, h2, h3 {
+    color: #ffffff;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+p {
+    line-height: 1.6;
+}
+
+.hidden {
+    display: none !important;
+}

@@ -1,0 +1,19 @@
+{
+  "name": "beeclub-system",
+  "version": "1.0.0",
+  "description": "BEECLUB - Real-World Operations & Event Management Platform",
+  "scripts": {
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "legacy:serve": "node server.js"
+  },
+  "dependencies": {
+    "jsdom": "^29.0.2"
+  },
+  "devDependencies": {
+    "localtunnel": "^2.0.2"
+  }
+}
