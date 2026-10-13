@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS checkin_logs (
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash  VARCHAR(255) UNIQUE NOT NULL,
+    token_hash  TEXT UNIQUE NOT NULL,
     expires_at  TIMESTAMPTZ NOT NULL,
     is_revoked  BOOLEAN NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -112,11 +112,11 @@ CREATE TRIGGER trg_tickets_updated_at BEFORE UPDATE ON tickets FOR EACH ROW EXEC
 -- ============================================================
 
 INSERT INTO users (id, email, student_id, password_hash, full_name, role, status, category, created_at) VALUES
-('a0000000-0000-0000-0000-000000000001', 'admin@beeclub.com', 'ADMIN-01', '$2a$10$QjJtP65a88wK6UvO.3y1U.lAeqF4sZ7qV1G2eXjFfL8pL7nN3qQ2G', 'Super Admin Bee', 'admin', 'on_duty', 'STAFF', NOW() - INTERVAL '30 days'),
-('a0000000-0000-0000-0000-000000000002', 'julian.t@hive-net.com', 'VIP-001', '$2a$10$QjJtP65a88wK6UvO.3y1U.lAeqF4sZ7qV1G2eXjFfL8pL7nN3qQ2G', 'Julian Thorne', 'user', 'active', 'VIP', '2023-10-12 10:00:00+07'),
-('a0000000-0000-0000-0000-000000000003', 'e.vance@hive-staff.net', 'STF-042', '$2a$10$QjJtP65a88wK6UvO.3y1U.lAeqF4sZ7qV1G2eXjFfL8pL7nN3qQ2G', 'Elena Vance', 'manager', 'on_duty', 'STAFF', '2024-02-05 14:30:00+07'),
-('a0000000-0000-0000-0000-000000000004', 'm.reed@gmail.com', '20240101', '$2a$10$QjJtP65a88wK6UvO.3y1U.lAeqF4sZ7qV1G2eXjFfL8pL7nN3qQ2G', 'Marcus Reed', 'user', 'inactive', 'REGULAR', '2024-01-22 09:15:00+07'),
-('a0000000-0000-0000-0000-000000000005', 'sasha.g@vip.hive.com', 'VIP-002', '$2a$10$QjJtP65a88wK6UvO.3y1U.lAeqF4sZ7qV1G2eXjFfL8pL7nN3qQ2G', 'Sasha Grey', 'user', 'active', 'VIP', '2023-12-30 16:45:00+07')
+('a0000000-0000-0000-0000-000000000001', 'admin@beeclub.com', 'ADMIN-01', '$2a$10$nlIihB9iJsOWygOx0NUe/ea3DS9hem5rz2ihgF23hwSngGaMQvKTe', 'Super Admin Bee', 'admin', 'on_duty', 'STAFF', NOW() - INTERVAL '30 days'),
+('a0000000-0000-0000-0000-000000000002', 'julian.t@hive-net.com', 'VIP-001', '$2a$10$nlIihB9iJsOWygOx0NUe/ea3DS9hem5rz2ihgF23hwSngGaMQvKTe', 'Julian Thorne', 'user', 'active', 'VIP', '2023-10-12 10:00:00+07'),
+('a0000000-0000-0000-0000-000000000003', 'e.vance@hive-staff.net', 'STF-042', '$2a$10$nlIihB9iJsOWygOx0NUe/ea3DS9hem5rz2ihgF23hwSngGaMQvKTe', 'Elena Vance', 'admin', 'on_duty', 'STAFF', '2024-02-05 14:30:00+07'),
+('a0000000-0000-0000-0000-000000000004', 'm.reed@gmail.com', '20240101', '$2a$10$nlIihB9iJsOWygOx0NUe/ea3DS9hem5rz2ihgF23hwSngGaMQvKTe', 'Marcus Reed', 'user', 'inactive', 'REGULAR', '2024-01-22 09:15:00+07'),
+('a0000000-0000-0000-0000-000000000005', 'sasha.g@vip.hive.com', 'VIP-002', '$2a$10$nlIihB9iJsOWygOx0NUe/ea3DS9hem5rz2ihgF23hwSngGaMQvKTe', 'Sasha Grey', 'user', 'active', 'VIP', '2023-12-30 16:45:00+07')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO events (id, code, title, description, location, start_time, end_time, capacity, registered_count, checkin_count, status, benefits, sponsors, created_by) VALUES

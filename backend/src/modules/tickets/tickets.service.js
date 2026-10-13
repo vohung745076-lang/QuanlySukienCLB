@@ -46,7 +46,8 @@ async function registerTicket(eventId, user, participantInfo = {}) {
         // 5. Generate secure guaranteed unique ticket code
         const seq = String(event.registered_count + 1).padStart(4, '0');
         const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
-        const ticketCode = `BEE-${event.code}-${seq}-${randomSuffix}`;
+        const mssvCode = (user.student_id || participantInfo.studentId || seq).replace(/[^a-zA-Z0-9]/g, '');
+        const ticketCode = `BUH-${event.code}-${mssvCode}-${randomSuffix}`;
 
         const name = participantInfo.fullName || user.full_name;
         const mssv = participantInfo.studentId || user.student_id || 'KHÁCH';

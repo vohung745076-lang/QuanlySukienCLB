@@ -16,8 +16,11 @@
     <link rel="stylesheet" href="css/pages.css">
     <link rel="stylesheet" href="css/responsive.css">
 
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Google Identity Services (GSI) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- HTML5 QR Code Camera Scanner (Quét QR trực tiếp qua camera màn hình) -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <!-- SheetJS (Xuất Excel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -258,9 +261,15 @@
                 </header>
 
                 <div class="checkin-container glass-panel">
-                    <div class="scanner-mock">
-                        <div class="scanner-animation"></div>
-                        <p>Sẵn sàng quét mã QR/Barcode</p>
+                    <div class="camera-scanner-wrapper" style="text-align:center;margin-bottom:20px;">
+                        <button id="btn-toggle-camera" type="button" class="btn btn-outline" style="border-color:var(--brand-gold,#f5c518);color:var(--brand-gold,#f5c518);margin-bottom:12px;padding:10px 20px;font-size:0.95rem;font-weight:600;">
+                            📸 Bật Camera Quét Mã QR Màn Hình
+                        </button>
+                        <div id="qr-camera-viewport" style="max-width:360px;margin:0 auto;border-radius:12px;overflow:hidden;display:none;background:#000;"></div>
+                        <div id="scanner-mock-view" class="scanner-mock">
+                            <div class="scanner-animation"></div>
+                            <p>Sẵn sàng quét mã QR trên màn hình điện thoại sinh viên</p>
+                        </div>
                     </div>
                     <div class="manual-checkin">
                         <h3>Hoặc nhập mã vé thủ công</h3>
@@ -435,6 +444,7 @@
 
     <!-- ── JavaScript Modules (đúng thứ tự phụ thuộc) ── -->
     <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/state.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>

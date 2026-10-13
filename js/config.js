@@ -1,11 +1,24 @@
 /* ============================================================
-   config.js — Supabase Client
-   Điền SUPABASE_URL và SUPABASE_ANON_KEY từ:
-   Supabase Dashboard → Settings → API
+   config.js — Cấu hình tập trung Hệ thống Quản lý Sự kiện BUH
    ============================================================ */
 
-const SUPABASE_URL = 'https://davxzhiyegkufjgoxluv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhdnh6aGl5ZWdrdWZqZ294bHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4MTE2NTUsImV4cCI6MjA5MTM4NzY1NX0.axaEpn0yF06VIw8q1ErfK0DobAXAjybWzM-9P8XrCcQ';
+(function () {
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.protocol === 'file:';
 
-// Ghi đè biến global supabase của CDN bằng Client Instance
-window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.CONFIG = {
+        // Tự động chuyển đổi endpoint giữa dev local và Render production
+        API_BASE_URL: isLocal 
+            ? 'http://localhost:5000/api/v1' 
+            : 'https://beeclub-backend.onrender.com/api/v1',
+            
+        // Google OAuth Client ID dành cho sinh viên trường BUH
+        // Lấy từ Google Cloud Console (Credentials > OAuth 2.0 Client IDs)
+        GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+
+        // Tên trường và định dạng
+        ORG_NAME: 'Đại Học Ngân Hàng TP.HCM (BUH)',
+        ALLOWED_EMAIL_DOMAIN: '@st.buh.edu.vn'
+    };
+})();

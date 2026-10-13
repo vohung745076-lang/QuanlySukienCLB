@@ -10,7 +10,7 @@ router.use(authenticate);
 router.post('/book', ticketsController.bookTicket);
 router.get('/my-tickets', ticketsController.getMyTickets);
 
-// Admin/Manager routes
-router.get('/event/:eventId', requireRoles('admin', 'manager'), ticketsController.getEventTickets);
+// Admin routes
+router.get('/event/:eventId', requireRoles('admin'), ticketsController.getEventTickets);
 
 module.exports = router;

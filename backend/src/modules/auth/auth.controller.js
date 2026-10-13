@@ -1,4 +1,5 @@
 const authService = require('./auth.service');
+const googleService = require('./google.service');
 const { sendSuccess, sendError } = require('../../utils/response');
 
 async function register(req, res, next) {
@@ -32,6 +33,20 @@ async function login(req, res, next) {
     }
 }
 
+async function googleLogin(req, res, next) {
+    try {
+        const { idToken } = req.body;
+        if (!idToken) {
+            return sendError(res, 'Vui lòng cung cấp Google ID Token!', 400);
+        }
+
+        const result = await googleService.googleLogin(idToken);
+        return sendSuccess(res, result, 'Đăng nhập Google Sinh viên BUH thành công!');
+    } catch (err) {
+        next(err);
+    }
+}
+
 async function refreshToken(req, res, next) {
     try {
         const { refreshToken } = req.body;
@@ -53,6 +68,7 @@ async function getMe(req, res, next) {
 module.exports = {
     register,
     login,
+    googleLogin,
     refreshToken,
     getMe
 };

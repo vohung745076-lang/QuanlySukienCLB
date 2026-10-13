@@ -1,16 +1,27 @@
 const { Pool } = require('pg');
 const config = require('../config');
 
-const pool = new Pool({
-    host: config.db.host,
-    port: config.db.port,
-    user: config.db.user,
-    password: config.db.password,
-    database: config.db.database,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000
-});
+const poolConfig = config.databaseUrl
+    ? {
+        connectionString: config.databaseUrl,
+        ssl: { rejectUnauthorized: false },
+        max: 15,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000
+    }
+    : {
+        host: config.db.host,
+        port: config.db.port,
+        user: config.db.user,
+        password: config.db.password,
+        database: config.db.database,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000
+    };
+
+const pool = new Pool(poolConfig);
+
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle PostgreSQL client:', err.message);

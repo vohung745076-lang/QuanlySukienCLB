@@ -297,6 +297,7 @@ function renderDashboardRows(filteredEvents, allEvents) {
             <td>
                 ${canEdit
                     ? `<div class="dashboard-actions">
+                            <button class="btn btn-sm btn-outline" style="border-color:var(--brand-gold,#f5c518);color:var(--brand-gold,#f5c518);" onclick="showEventQrPoster('${evt.id}')" title="Mã QR bài đăng">📱 QR Poster</button>
                             <button class="btn btn-sm btn-outline" onclick="viewEventUsers('${evt.id}')">Danh sách</button>
                             <button class="btn btn-sm btn-outline" onclick="editEvent('${evt.id}')">Sửa</button>
                             <button class="btn btn-sm btn-outline dashboard-btn-danger" onclick="deleteEvent('${evt.id}')">Xóa</button>
@@ -312,40 +313,53 @@ function renderDashboardRows(filteredEvents, allEvents) {
 async function renderAdminDashboard() {
     ensureDashboardView();
 
-    const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: true });
+    try {
+        const res = await window.api.events.getAll({ limit: 100 });
+        const rawEvents = res.data || [];
 
-    if (error) {
-        showToast('Không tải được danh sách sự kiện!', 'error');
-        return;
+        events = rawEvents.map((e) => ({
+            ...e,
+            id: e.id,
+            name: e.title || e.name,
+            code: e.code,
+            date: e.start_time || e.date,
+            end_date: e.end_time || e.end_date,
+            registered: e.registered_count ?? e.registered ?? 0,
+            checkins: e.checkin_count ?? e.checkins ?? 0,
+            capacity: e.capacity || 1000,
+            location: e.location,
+            description: e.description,
+            benefits: e.benefits,
+            sponsors: e.sponsors
+        }));
+
+        renderDashboardStats(events);
+
+        const searchValue = dashboardState.searchTerm.trim().toLowerCase();
+        const filtered = events.filter((evt) => {
+            const matchesSearch = !searchValue
+                || evt.name.toLowerCase().includes(searchValue)
+                || (evt.code && evt.code.toLowerCase().includes(searchValue))
+                || evt.id.toLowerCase().includes(searchValue);
+            const status = getDashboardStatus(evt);
+            const matchesStatus = dashboardState.statusFilter === 'all' || status === dashboardState.statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+
+        const spotlightEvent = [...events].sort((a, b) => {
+            const aStatus = getDashboardStatus(a);
+            const bStatus = getDashboardStatus(b);
+            const aPriority = aStatus === 'live' ? 0 : aStatus === 'upcoming' ? 1 : 2;
+            const bPriority = bStatus === 'live' ? 0 : bStatus === 'upcoming' ? 1 : 2;
+            if (aPriority !== bPriority) return aPriority - bPriority;
+            return new Date(a.date) - new Date(b.date);
+        })[0];
+
+        renderDashboardSpotlight(spotlightEvent);
+        renderDashboardRows(filtered, events);
+    } catch (err) {
+        showToast('Lỗi khi tải danh sách sự kiện: ' + err.message, 'error');
     }
-
-    events = data || [];
-    renderDashboardStats(events);
-
-    const searchValue = dashboardState.searchTerm.trim().toLowerCase();
-    const filtered = events.filter((evt) => {
-        const matchesSearch = !searchValue
-            || evt.name.toLowerCase().includes(searchValue)
-            || evt.id.toLowerCase().includes(searchValue);
-        const status = getDashboardStatus(evt);
-        const matchesStatus = dashboardState.statusFilter === 'all' || status === dashboardState.statusFilter;
-        return matchesSearch && matchesStatus;
-    });
-
-    const spotlightEvent = [...events].sort((a, b) => {
-        const aStatus = getDashboardStatus(a);
-        const bStatus = getDashboardStatus(b);
-        const aPriority = aStatus === 'live' ? 0 : aStatus === 'upcoming' ? 1 : 2;
-        const bPriority = bStatus === 'live' ? 0 : bStatus === 'upcoming' ? 1 : 2;
-        if (aPriority !== bPriority) return aPriority - bPriority;
-        return new Date(a.date) - new Date(b.date);
-    })[0];
-
-    renderDashboardSpotlight(spotlightEvent);
-    renderDashboardRows(filtered, events);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -368,42 +382,40 @@ function closeEventModal() {
 async function handleEventFormSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('event-id').value;
+    const title = document.getElementById('event-name').value.trim();
+    const startTime = document.getElementById('event-date').value;
+    const endTime = document.getElementById('event-end-date').value || startTime;
+    const capacity = parseInt(document.getElementById('event-capacity').value, 10);
+    const location = document.getElementById('event-location').value.trim();
+    const description = document.getElementById('event-desc').value.trim();
+    const benefits = document.getElementById('event-benefits').value.trim();
+    const sponsors = document.getElementById('event-sponsors').value.trim();
+
     const payload = {
-        name: document.getElementById('event-name').value,
-        date: document.getElementById('event-date').value,
-        end_date: document.getElementById('event-end-date').value,
-        capacity: parseInt(document.getElementById('event-capacity').value),
-        location: document.getElementById('event-location').value,
-        description: document.getElementById('event-desc').value,
-        benefits: document.getElementById('event-benefits').value,
-        sponsors: document.getElementById('event-sponsors').value,
+        title,
+        startTime,
+        endTime,
+        capacity,
+        location,
+        description,
+        benefits,
+        sponsors
     };
 
-    if (id) {
-        const { error } = await supabase.from('events').update(payload).eq('id', id);
-        if (error) {
-            showToast('Cập nhật thất bại!', 'error');
-            return;
+    try {
+        if (id) {
+            await window.api.events.update(id, payload);
+            showToast('Đã cập nhật sự kiện thành công!');
+        } else {
+            await window.api.events.create(payload);
+            showToast('Đã tạo sự kiện BUH mới thành công! 🎉');
         }
-        showToast('Đã cập nhật sự kiện!');
-    } else {
-        const newId = `EVT-${Date.now().toString().slice(-6)}`;
-        const { error } = await supabase.from('events').insert({
-            id: newId,
-            ...payload,
-            registered: 0,
-            checkins: 0,
-            creator_id: currentUser.id
-        });
-        if (error) {
-            showToast('Tạo sự kiện thất bại!', 'error');
-            return;
-        }
-        showToast('Đã tạo sự kiện mới!');
-    }
 
-    closeEventModal();
-    await renderAdminDashboard();
+        closeEventModal();
+        await renderAdminDashboard();
+    } catch (err) {
+        showToast(err.message || 'Lưu sự kiện thất bại!', 'error');
+    }
 }
 
 window.editEvent = async (id) => {
@@ -420,61 +432,67 @@ window.editEvent = async (id) => {
     document.getElementById('event-benefits').value = evt.benefits || '';
     document.getElementById('event-sponsors').value = evt.sponsors || '';
 
-    document.getElementById('modal-event-title').textContent = 'Chỉnh sửa Sự kiện';
+    document.getElementById('modal-event-title').textContent = 'Chỉnh sửa Sự kiện BUH';
     document.getElementById('modal-event').classList.remove('hidden');
 };
 
 window.deleteEvent = async (id) => {
     if (!confirm('Bạn có chắc muốn xóa sự kiện này? Toàn bộ vé liên quan sẽ bị xóa!')) return;
 
-    const { error } = await supabase.from('events').delete().eq('id', id);
-    if (error) {
-        showToast('Xóa thất bại!', 'error');
-        return;
+    try {
+        await window.api.events.delete(id);
+        showToast('Đã xóa sự kiện.');
+        await renderAdminDashboard();
+    } catch (err) {
+        showToast(err.message || 'Xóa sự kiện thất bại!', 'error');
     }
-
-    showToast('Đã xóa sự kiện.');
-    await renderAdminDashboard();
 };
 
 window.viewEventUsers = async (eventId) => {
     const evt = events.find((item) => item.id === eventId);
     if (!evt) return;
 
-    document.getElementById('view-users-event-name').textContent = evt.name;
+    document.getElementById('view-users-event-name').textContent = evt.name || evt.title;
     const tbody = document.getElementById('event-users-tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Đang tải...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Đang tải danh sách vé...</td></tr>';
     document.getElementById('modal-event-users').classList.remove('hidden');
 
-    const { data: participants, error } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: true });
+    try {
+        const res = await window.api.tickets.getEventTickets(eventId);
+        const participants = res.data || [];
 
-    if (error) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--error)">Không tải được danh sách!</td></tr>';
-        return;
+        if (participants.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Chưa có ai đăng ký sự kiện này.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = '';
+        participants.forEach((participant, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td style="font-family:monospace;font-weight:bold">${participant.ticket_code || participant.id}</td>
+                <td>${participant.participant_mssv || '---'}</td>
+                <td>${participant.participant_name || 'Khách'}</td>
+                <td>${participant.status === 'used'
+                    ? '<span style="color:var(--success,#00b894);font-weight:bold">Đã Check-in</span>'
+                    : '<span style="color:var(--text-muted)">Hợp lệ</span>'
+                }</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--error)">Lỗi: ${err.message}</td></tr>`;
     }
+};
 
-    if (!participants || participants.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Chưa có ai đăng ký sự kiện này.</td></tr>';
-        return;
-    }
+window.showEventQrPoster = (eventId) => {
+    const evt = events.find((item) => item.id === eventId);
+    if (!evt) return;
 
-    tbody.innerHTML = '';
-    participants.forEach((participant, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td style="font-family:monospace;font-weight:bold">${participant.id}</td>
-            <td>${participant.participant_mssv || '---'}</td>
-            <td>${participant.participant_name || 'Khách'}</td>
-            <td>${participant.status === 'used'
-                ? '<span style="color:var(--success);font-weight:bold">Đã Check-in</span>'
-                : '<span style="color:var(--text-muted)">Hợp lệ</span>'
-            }</td>
-        `;
-        tbody.appendChild(tr);
-    });
+    const shareUrl = `${window.location.origin}${window.location.pathname}#/user/explore?event=${evt.code || evt.id}`;
+    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+
+    alert(`MÃ QR BÀI ĐĂNG SỰ KIỆN: ${evt.name || evt.title}\n\nLink sinh viên quét: ${shareUrl}\n\n(Bấm OK để mở ảnh mã QR tải về in poster)`);
+    window.open(qrImgUrl, '_blank');
 };

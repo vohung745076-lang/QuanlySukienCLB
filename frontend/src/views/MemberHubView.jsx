@@ -82,10 +82,10 @@ export default function MemberHubView({ currentUser, showToast }) {
   };
 
   const handleToggleRole = async (member) => {
-    const nextRole = member.role === 'manager' ? 'user' : 'manager';
+    const nextRole = member.role === 'admin' ? 'user' : 'admin';
     try {
       await api.updateMemberRole(member.id, nextRole);
-      showToast(`Đã chuyển vai trò của ${member.full_name} thành ${nextRole}!`, 'success');
+      showToast(`Đã chuyển vai trò của ${member.full_name} thành ${nextRole.toUpperCase()}!`, 'success');
       fetchMembers();
     } catch (err) {
       showToast(err.message, 'error');
@@ -196,7 +196,7 @@ export default function MemberHubView({ currentUser, showToast }) {
             <tr>
               <th>MEMBER</th>
               <th>STATUS</th>
-              <th>CATEGORY</th>
+              <th>ROLE / VAI TRÒ</th>
               <th>JOINED</th>
               <th style={{ textAlign: 'right' }}>ACTIONS</th>
             </tr>
@@ -251,10 +251,10 @@ export default function MemberHubView({ currentUser, showToast }) {
                     <td>
                       <span
                         className={`cat-badge ${
-                          isVIP ? 'vip' : isStaff ? 'staff' : 'regular'
+                          m.role === 'admin' ? 'staff' : 'regular'
                         }`}
                       >
-                        {m.category || (isStaff ? 'STAFF' : 'REGULAR')}
+                        {m.role === 'admin' ? 'ADMIN' : 'USER'}
                       </span>
                     </td>
 
@@ -268,9 +268,9 @@ export default function MemberHubView({ currentUser, showToast }) {
                           <button
                             className="btn btn-outline btn-sm"
                             onClick={() => handleToggleRole(m)}
-                            title="Chuyển đổi quyền Staff / User"
+                            title="Chuyển đổi quyền Admin / User"
                           >
-                            {m.role === 'manager' ? 'Demote' : 'Set Staff'}
+                            {m.role === 'admin' ? 'Hạ quyền User' : 'Thăng quyền Admin'}
                           </button>
                           <button
                             className="btn btn-outline btn-sm"
@@ -378,8 +378,7 @@ export default function MemberHubView({ currentUser, showToast }) {
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value)}
                   >
-                    <option value="user">Thành viên (Member)</option>
-                    <option value="manager">Ban điều hành (Staff/Manager)</option>
+                    <option value="user">Người dùng (User)</option>
                     <option value="admin">Quản trị viên (Admin)</option>
                   </select>
                 </div>

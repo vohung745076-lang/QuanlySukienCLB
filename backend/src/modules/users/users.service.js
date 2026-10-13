@@ -6,9 +6,9 @@ async function getMemberHubStats() {
     const totalRes = await db.query('SELECT COUNT(*) as count FROM users');
     const totalMembers = parseInt(totalRes.rows[0].count, 10);
 
-    // 2. Active Staff (roles admin or manager, status active or on_duty)
+    // 2. Active Staff (role admin, status active or on_duty)
     const staffRes = await db.query(
-        "SELECT COUNT(*) as count FROM users WHERE role IN ('admin', 'manager') AND status IN ('active', 'on_duty')"
+        "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND status IN ('active', 'on_duty')"
     );
     const activeStaff = parseInt(staffRes.rows[0].count, 10);
 
@@ -97,15 +97,15 @@ async function addMember({ fullName, email, studentId, role = 'user', category =
 }
 
 async function updateMemberRole(userId, newRole) {
-    if (!['user', 'manager', 'admin'].includes(newRole)) {
-        const err = new Error('Vai trò không hợp lệ!');
+    if (!['user', 'admin'].includes(newRole)) {
+        const err = new Error('Vai trò không hợp lệ! Chỉ chấp nhận user hoặc admin.');
         err.statusCode = 400;
         throw err;
     }
 
     const updateRes = await db.query(
         `UPDATE users
-         SET role = $1, category = CASE WHEN $1 = 'manager' THEN 'STAFF' ELSE category END
+         SET role = $1, category = CASE WHEN $1 = 'admin' THEN 'STAFF' ELSE 'REGULAR' END
          WHERE id = $2
          RETURNING id, email, full_name, role, category`,
         [newRole, userId]

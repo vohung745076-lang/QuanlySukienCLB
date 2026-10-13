@@ -77,6 +77,7 @@ async function getEventById(id) {
 
 async function createEvent(data, creatorId) {
     const {
+        code: customCode,
         title,
         description,
         location,
@@ -88,9 +89,12 @@ async function createEvent(data, creatorId) {
     } = data;
 
     // Generate unique event code
-    const countRes = await db.query('SELECT COUNT(*) as count FROM events');
-    const seq = String(parseInt(countRes.rows[0].count, 10) + 1).padStart(3, '0');
-    const code = `EVT-${new Date().getFullYear()}-${seq}`;
+    let code = customCode ? customCode.trim().toUpperCase() : null;
+    if (!code) {
+        const countRes = await db.query('SELECT COUNT(*) as count FROM events');
+        const seq = String(parseInt(countRes.rows[0].count, 10) + 1).padStart(3, '0');
+        code = `BUH-${new Date().getFullYear()}-${seq}`;
+    }
 
     const insertRes = await db.query(
         `INSERT INTO events 

@@ -10,6 +10,7 @@ import { api, setAuthToken, getAuthToken } from './services/api';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [viewRole, setViewRole] = useState(null); // 'admin' | 'user'
   const [currentView, setCurrentView] = useState('events'); // 'events', 'dashboard', 'members', 'checkin', 'my-tickets'
   const [isInitializing, setIsInitializing] = useState(true);
   const [toasts, setToasts] = useState([]);
@@ -35,9 +36,12 @@ export default function App() {
 
     try {
       const res = await api.getMe();
-      setCurrentUser(res.data);
+      const user = res.data;
+      setCurrentUser(user);
+      const initialRole = user.role === 'admin' ? 'admin' : 'user';
+      setViewRole(initialRole);
       // Set default view based on role
-      if (res.data.role === 'admin' || res.data.role === 'manager') {
+      if (initialRole === 'admin') {
         setCurrentView('dashboard');
       } else {
         setCurrentView('events');
@@ -53,7 +57,9 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
-    if (user.role === 'admin' || user.role === 'manager') {
+    const initialRole = user.role === 'admin' ? 'admin' : 'user';
+    setViewRole(initialRole);
+    if (initialRole === 'admin') {
       setCurrentView('dashboard');
     } else {
       setCurrentView('events');
@@ -63,8 +69,25 @@ export default function App() {
   const handleLogout = () => {
     setAuthToken(null);
     setCurrentUser(null);
+    setViewRole(null);
     setCurrentView('events');
     showToast('Đã đăng xuất khỏi hệ thống.');
+  };
+
+  // Determine effective role (admin user can toggle between 'admin' and 'user' perspective)
+  const effectiveRole = currentUser?.role === 'admin' ? (viewRole || 'admin') : 'user';
+
+  const handleToggleViewRole = () => {
+    if (currentUser?.role !== 'admin') return;
+    const nextRole = effectiveRole === 'admin' ? 'user' : 'admin';
+    setViewRole(nextRole);
+    if (nextRole === 'admin') {
+      setCurrentView('dashboard');
+      showToast('Đã chuyển sang giao diện Quản trị viên (ADMIN)', 'success');
+    } else {
+      setCurrentView('events');
+      showToast('Đã chuyển sang giao diện Hội viên (USER)', 'info');
+    }
   };
 
   if (isInitializing) {
@@ -95,6 +118,8 @@ export default function App() {
           currentView={currentView}
           setCurrentView={setCurrentView}
           currentUser={currentUser}
+          effectiveRole={effectiveRole}
+          onToggleViewRole={handleToggleViewRole}
           onLogout={handleLogout}
         />
       )}
@@ -103,11 +128,11 @@ export default function App() {
       <main className="main-content">
         {!currentUser ? (
           <AuthView onLoginSuccess={handleLoginSuccess} showToast={showToast} />
-        ) : currentView === 'members' ? (
+        ) : effectiveRole === 'admin' && currentView === 'members' ? (
           <MemberHubView currentUser={currentUser} showToast={showToast} />
-        ) : currentView === 'dashboard' ? (
+        ) : effectiveRole === 'admin' && currentView === 'dashboard' ? (
           <DashboardView currentUser={currentUser} showToast={showToast} />
-        ) : currentView === 'checkin' ? (
+        ) : effectiveRole === 'admin' && currentView === 'checkin' ? (
           <CheckinView currentUser={currentUser} showToast={showToast} />
         ) : currentView === 'my-tickets' ? (
           <MyTicketsView currentUser={currentUser} setCurrentView={setCurrentView} showToast={showToast} />

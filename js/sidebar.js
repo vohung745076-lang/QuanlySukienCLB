@@ -12,19 +12,12 @@ function renderSidebarMenu() {
         { id: 'nav-checkin', label: 'CHECK-IN', view: 'view-checkin', route: '#/admin/checkin' }
     ];
 
-    const managerLinks = [
-        { id: 'nav-dashboard', label: 'EVENTS', view: 'view-dashboard', route: '#/admin/dashboard' },
-        { id: 'nav-checkin', label: 'CHECK-IN', view: 'view-checkin', route: '#/admin/checkin' }
-    ];
-
     const userLinks = [
         { id: 'nav-explore', label: 'EXPLORE', view: 'view-explore', route: '#/user/explore' },
         { id: 'nav-tickets', label: 'MY TICKETS', view: 'view-tickets', route: '#/user/tickets' }
     ];
 
-    let links = userLinks;
-    if (currentUser.role === 'admin') links = adminLinks;
-    if (currentUser.role === 'manager') links = managerLinks;
+    const links = currentUser.role === 'admin' ? adminLinks : userLinks;
 
     links.forEach((link) => {
         const div = document.createElement('div');
